@@ -5,6 +5,7 @@ import {
   FormControl,
   Box,
   Heading,
+  View,
   Pressable,
   Center,
   ScrollView,
@@ -14,7 +15,7 @@ import React from "react";
 import { AntDesign, Entypo, SimpleLineIcons } from "@expo/vector-icons";
 import { useForm, Controller } from "react-hook-form";
 
-function LoginScreen() {
+function RegisterScreen() {
   const {
     control,
     handleSubmit,
@@ -31,11 +32,43 @@ function LoginScreen() {
     <ScrollView w="full" h="full">
       <VStack width="full" space={4} p={6} h="full" justifyContent="center">
         <Center mb={5}>
-          <SimpleLineIcons name="user-following" size={80} color="#008080" />
+          <AntDesign name="adduser" size={80} color="#008080" />
         </Center>
         <Heading textAlign="center" fontSize="3xl" mb={5}>
-          Intră în cont
+          Crează un cont nou
         </Heading>
+        <FormControl isRequired isInvalid={"username" in errors}>
+          <FormControl.Label>Username</FormControl.Label>
+          <Controller
+            control={control}
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                onBlur={onBlur}
+                placeholder="username"
+                onChangeText={onChange}
+                value={value}
+                fontSize="lg"
+                variant="outline"
+                InputLeftElement={
+                  <SimpleLineIcons
+                    name="user"
+                    size={24}
+                    style={{ marginLeft: 15 }}
+                    color="#155e75"
+                  />
+                }
+              />
+            )}
+            name="username"
+            rules={{ required: "Username is required", minLength: 3 }}
+            defaultValue=""
+          />
+          <FormControl.ErrorMessage>
+            {errors.firstName?.type == "required"
+              ? errors.firstName?.message
+              : "Minimum 3 caractere"}
+          </FormControl.ErrorMessage>
+        </FormControl>
 
         <FormControl isRequired isInvalid={"email" in errors}>
           <FormControl.Label>Email</FormControl.Label>
@@ -101,13 +134,50 @@ function LoginScreen() {
             name="password"
             rules={{
               required: "Password is required",
-              minLength: 1,
-              validate: (value) => value == "admin" || "Parolă incorectă",
+              minLength: 8,
             }}
             defaultValue=""
           />
           <FormControl.ErrorMessage>
-            {errors.password?.message}
+            {errors.firstName?.type == "required"
+              ? errors.firstName?.message
+              : "Parola trebuie sa conțină minim 8 caractere"}
+          </FormControl.ErrorMessage>
+        </FormControl>
+
+        <FormControl isRequired isInvalid={"confirm_password" in errors}>
+          <FormControl.Label>Confirm Password</FormControl.Label>
+          <Controller
+            control={control}
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                onBlur={onBlur}
+                placeholder="**********"
+                onChangeText={onChange}
+                value={value}
+                type="password"
+                fontSize="lg"
+                InputLeftElement={
+                  <AntDesign
+                    name="unlock"
+                    style={{ marginLeft: 15 }}
+                    size={24}
+                    color="#155e75"
+                  />
+                }
+                variant="outline"
+              />
+            )}
+            name="confirm_password"
+            rules={{
+              required: "Confirm password is required",
+              validate: (value) => value === pwd || "Parolele nu coincid",
+            }}
+            defaultValue=""
+          />
+          <FormControl.ErrorMessage>
+            {console.log(pwd)}
+            {errors.confirm_password?.message}
           </FormControl.ErrorMessage>
         </FormControl>
 
@@ -123,13 +193,13 @@ function LoginScreen() {
               bgColor: "teal.500",
             }}
           >
-            Autentificare
+            Înregistrare
           </Button>
           <Box flexDirection="row" mt={3}>
             <Text fontSize="md">Nu ai încă un cont,</Text>
             <Pressable ml={2}>
               <Text fontSize="md" fontWeight="600" color="primary.600">
-                Crează unul nou
+                Autentificare
               </Text>
             </Pressable>
           </Box>
@@ -138,4 +208,4 @@ function LoginScreen() {
     </ScrollView>
   );
 }
-export default LoginScreen;
+export default RegisterScreen;
