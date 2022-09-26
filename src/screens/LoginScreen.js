@@ -9,27 +9,85 @@ import {
   Center,
   ScrollView,
   Text,
+  useToast,
 } from "native-base";
-import React from "react";
+import React, { useReducer } from "react";
 import { AntDesign, Entypo, SimpleLineIcons } from "@expo/vector-icons";
 import { useForm, Controller } from "react-hook-form";
+import axios from "axios";
+import getError from "../utils";
 
-function LoginScreen() {
+const reducer = (state, action) => {
+  switch (action.type) {
+    case "FETCH_USER_REQUEST":
+      return { ...state, loading: true };
+    case "FETCH_USER_SUCCESS":
+      return { ...state, loading: false, user: action.payload };
+    case "FETCH_USER_FAIL":
+      return { ...state, loading: false, error: action.payload };
+    default:
+      return state;
+  }
+};
+
+function LoginScreen({ navigation }) {
   const {
     control,
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm({ defaultValues: { password: "" } });
-  const onSubmit = (data) => {
-    console.log("submiting with ", data);
+  } = useForm();
+
+  // Manage state of API Request
+  const [{ loading, user, error }, dispatch] = useReducer(reducer, {
+    loading: false,
+    user: null,
+    error: "",
+  });
+
+  const toast = useToast();
+
+  const onSubmit = async (fromData) => {
+    console.log("formdata", fromData);
+
+    dispatch({ type: "FETCH_USER_REQUEST", loading: true });
+
+    try {
+      const { data } = await axios.post(
+        `${process.env.API_URI_SITE}/wp-json/wp/login`,
+        {
+          email: fromData.email,
+          password: fromData.password,
+        }
+      );
+      dispatch({ type: "FETCH_USER_SUCCESS", loading: false, payload: data });
+    } catch (err) {
+      dispatch({
+        type: "FETCH_USER_FAIL",
+        loading: false,
+        payload: err.message,
+      });
+
+      toast.show({
+        description: getError(err),
+        type: "error",
+        style: {
+          backgroundColor: "red",
+        },
+      });
+    }
   };
 
-  const pwd = watch("password");
-
   return (
-    <ScrollView w="full" h="full">
+    <ScrollView w="full" h="full" safeAreaTop>
       <VStack width="full" space={4} p={6} h="full" justifyContent="center">
+        <Text>
+          {loading
+            ? "Loading..."
+            : error
+            ? console.log(error)
+            : console.log(user)}
+        </Text>
         <Center mb={5}>
           <SimpleLineIcons name="user-following" size={80} color="#008080" />
         </Center>
@@ -56,7 +114,8 @@ function LoginScreen() {
                     color="#155e75"
                   />
                 }
-                fontSize="lg"
+                fontSize="xl"
+                py={3}
                 variant="outline"
               />
             )}
@@ -74,7 +133,6 @@ function LoginScreen() {
             {errors.email?.message}
           </FormControl.ErrorMessage>
         </FormControl>
-
         <FormControl isRequired isInvalid={"password" in errors}>
           <FormControl.Label>Password</FormControl.Label>
           <Controller
@@ -86,7 +144,8 @@ function LoginScreen() {
                 onChangeText={onChange}
                 value={value}
                 type="text"
-                fontSize="lg"
+                fontSize="xl"
+                py={3}
                 variant="outline"
                 InputLeftElement={
                   <AntDesign
@@ -101,8 +160,6 @@ function LoginScreen() {
             name="password"
             rules={{
               required: "Password is required",
-              minLength: 1,
-              validate: (value) => value == "admin" || "Parolă incorectă",
             }}
             defaultValue=""
           />
@@ -110,7 +167,6 @@ function LoginScreen() {
             {errors.password?.message}
           </FormControl.ErrorMessage>
         </FormControl>
-
         <Box mt={3}>
           <Button
             onPress={handleSubmit(onSubmit)}
@@ -127,11 +183,19 @@ function LoginScreen() {
           </Button>
           <Box flexDirection="row" mt={3}>
             <Text fontSize="md">Nu ai încă un cont,</Text>
-            <Pressable ml={2}>
+            <Button
+              ml={2}
+              p={0}
+              variant="link"
+              onPress={() => navigation.push("Register")}
+              _pressed={{
+                color: "primary.300",
+              }}
+            >
               <Text fontSize="md" fontWeight="600" color="primary.600">
                 Crează unul nou
               </Text>
-            </Pressable>
+            </Button>
           </Box>
         </Box>
       </VStack>

@@ -15,7 +15,7 @@ import React from "react";
 import { AntDesign, Entypo, SimpleLineIcons } from "@expo/vector-icons";
 import { useForm, Controller } from "react-hook-form";
 
-function RegisterScreen() {
+function RegisterScreen({ navigation }) {
   const {
     control,
     handleSubmit,
@@ -197,11 +197,16 @@ function RegisterScreen() {
           </Button>
           <Box flexDirection="row" mt={3}>
             <Text fontSize="md">Nu ai încă un cont,</Text>
-            <Pressable ml={2}>
+            <Button
+              p={0}
+              variant="link"
+              onPress={() => navigation.push("Autentificare")}
+              ml={2}
+            >
               <Text fontSize="md" fontWeight="600" color="primary.600">
                 Autentificare
               </Text>
-            </Pressable>
+            </Button>
           </Box>
         </Box>
       </VStack>
