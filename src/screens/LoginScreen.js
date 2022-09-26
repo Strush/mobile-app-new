@@ -5,30 +5,18 @@ import {
   FormControl,
   Box,
   Heading,
-  Pressable,
   Center,
   ScrollView,
   Text,
   useToast,
 } from "native-base";
-import React, { useReducer } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { AntDesign, Entypo, SimpleLineIcons } from "@expo/vector-icons";
 import { useForm, Controller } from "react-hook-form";
 import axios from "axios";
 import getError from "../utils";
-
-const reducer = (state, action) => {
-  switch (action.type) {
-    case "FETCH_USER_REQUEST":
-      return { ...state, loading: true };
-    case "FETCH_USER_SUCCESS":
-      return { ...state, loading: false, user: action.payload };
-    case "FETCH_USER_FAIL":
-      return { ...state, loading: false, error: action.payload };
-    default:
-      return state;
-  }
-};
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Store } from "../Store";
 
 function LoginScreen({ navigation }) {
   const {
@@ -38,56 +26,57 @@ function LoginScreen({ navigation }) {
     formState: { errors },
   } = useForm();
 
-  // Manage state of API Request
-  const [{ loading, user, error }, dispatch] = useReducer(reducer, {
-    loading: false,
-    user: null,
-    error: "",
-  });
+  // Loading button on form submit
+  const [loading, setLoading] = useState(false);
+
+  // Manage state with context API
+  const { state, dispatch: ctxDispatch } = useContext(Store);
+  const { userInfo } = state;
 
   const toast = useToast();
 
   const onSubmit = async (fromData) => {
-    console.log("formdata", fromData);
-
-    dispatch({ type: "FETCH_USER_REQUEST", loading: true });
-
+    setLoading(true);
     try {
       const { data } = await axios.post(
-        `${process.env.API_URI_SITE}/wp-json/wp/login`,
+        `${process.env.API_URI_SITE}/wp-json/jwt-auth/v1/token`,
         {
-          email: fromData.email,
+          username: fromData.email,
           password: fromData.password,
         }
       );
-      dispatch({ type: "FETCH_USER_SUCCESS", loading: false, payload: data });
-    } catch (err) {
-      dispatch({
-        type: "FETCH_USER_FAIL",
-        loading: false,
-        payload: err.message,
-      });
+      ctxDispatch({ type: "USER_SINGIN", payload: data });
+      setLoading(false);
 
+      // Send token on async storage
+      AsyncStorage.setItem("@user_info", JSON.stringify(data));
+      navigation.push("Home");
+    } catch (err) {
+      console.log(err.response.status);
       toast.show({
-        description: getError(err),
+        description:
+          err.response.status == 403
+            ? "Parola sau email-ul sunt invalide!"
+            : getError(err),
         type: "error",
         style: {
           backgroundColor: "red",
         },
       });
+      setLoading(false);
     }
   };
+
+  // If user is login, redirect to homepage
+  useEffect(() => {
+    if (userInfo) {
+      navigation.push("Home");
+    }
+  }, [navigation, userInfo]);
 
   return (
     <ScrollView w="full" h="full" safeAreaTop>
       <VStack width="full" space={4} p={6} h="full" justifyContent="center">
-        <Text>
-          {loading
-            ? "Loading..."
-            : error
-            ? console.log(error)
-            : console.log(user)}
-        </Text>
         <Center mb={5}>
           <SimpleLineIcons name="user-following" size={80} color="#008080" />
         </Center>
@@ -174,6 +163,8 @@ function LoginScreen({ navigation }) {
             _text={{
               fontSize: "xl",
             }}
+            isLoading={loading}
+            isLoadingText="Autentificare..."
             _pressed={{
               color: "red",
               bgColor: "teal.500",

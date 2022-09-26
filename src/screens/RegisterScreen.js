@@ -14,6 +14,7 @@ import {
 import React from "react";
 import { AntDesign, Entypo, SimpleLineIcons } from "@expo/vector-icons";
 import { useForm, Controller } from "react-hook-form";
+import { Store } from "../Store";
 
 function RegisterScreen({ navigation }) {
   const {
