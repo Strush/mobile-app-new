@@ -5,16 +5,19 @@ import {
   FormControl,
   Box,
   Heading,
-  View,
-  Pressable,
   Center,
   ScrollView,
   Text,
+  useToast,
 } from "native-base";
-import React from "react";
+import React, { useContext, useState } from "react";
 import { AntDesign, Entypo, SimpleLineIcons } from "@expo/vector-icons";
 import { useForm, Controller } from "react-hook-form";
 import { Store } from "../Store";
+import axios from "axios";
+import getError from "../utils";
+import getToken from "../theme/getToken";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 function RegisterScreen({ navigation }) {
   const {
@@ -22,12 +25,56 @@ function RegisterScreen({ navigation }) {
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm({ defaultValues: { password: "" } });
-  const onSubmit = (data) => {
-    console.log("submiting with ", data);
-  };
+  } = useForm();
 
+  // Loading button on form submit
+  const [loading, setLoading] = useState(false);
+  const toast = useToast();
   const pwd = watch("password");
+
+  // Manage state with context API
+  const { state, dispatch: ctxDispatch } = useContext(Store);
+  const { userInfo } = state;
+
+  const onSubmit = async (fromData) => {
+    setLoading(true);
+
+    const token = getToken(fromData.email, fromData.password);
+
+    try {
+      await axios.post(
+        `${process.env.API_URI_SITE}/wp-json/wp/v2/users/register`,
+        {
+          username: fromData.username,
+          email: fromData.email,
+          password: fromData.password,
+        }
+      );
+
+      ctxDispatch({ type: "USER_SINGIN", payload: token });
+      setLoading(false);
+
+      // Send token on async storage
+      await AsyncStorage.setItem("@user_info", JSON.stringify(data));
+      toast.show({
+        description: "Utilizatorul a fost inregistrat cu success!",
+        type: "success",
+        style: {
+          backgroundColor: "green",
+        },
+      });
+
+      navigation.push("Home");
+    } catch (err) {
+      toast.show({
+        description: getError(err),
+        type: "error",
+        style: {
+          backgroundColor: "red",
+        },
+      });
+    }
+  };
 
   return (
     <ScrollView w="full" h="full">
@@ -99,7 +146,7 @@ function RegisterScreen({ navigation }) {
               required: "Email is required",
               pattern: {
                 value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]{2,}$/i,
-                message: "invalid email address",
+                message: "Invalid email address",
               },
             }}
             defaultValue=""
@@ -186,6 +233,8 @@ function RegisterScreen({ navigation }) {
           <Button
             onPress={handleSubmit(onSubmit)}
             bgColor="teal.600"
+            isLoading={loading}
+            isLoadingText="Inregistrare..."
             _text={{
               fontSize: "xl",
             }}
@@ -201,7 +250,7 @@ function RegisterScreen({ navigation }) {
             <Button
               p={0}
               variant="link"
-              onPress={() => navigation.push("Autentificare")}
+              onPress={() => navigation.navigate("Login")}
               ml={2}
             >
               <Text fontSize="md" fontWeight="600" color="primary.600">

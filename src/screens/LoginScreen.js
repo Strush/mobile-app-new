@@ -10,7 +10,7 @@ import {
   Text,
   useToast,
 } from "native-base";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
 import { AntDesign, Entypo, SimpleLineIcons } from "@expo/vector-icons";
 import { useForm, Controller } from "react-hook-form";
 import axios from "axios";
@@ -29,9 +29,12 @@ function LoginScreen({ navigation }) {
   // Loading button on form submit
   const [loading, setLoading] = useState(false);
 
+  console.log(navigation.navigate);
+
   // Manage state with context API
   const { state, dispatch: ctxDispatch } = useContext(Store);
   const { userInfo } = state;
+  console.log(userInfo, "userInfo register");
 
   const toast = useToast();
 
@@ -49,10 +52,9 @@ function LoginScreen({ navigation }) {
       setLoading(false);
 
       // Send token on async storage
-      AsyncStorage.setItem("@user_info", JSON.stringify(data));
+      await AsyncStorage.setItem("@user_info", JSON.stringify(data));
       navigation.push("Home");
     } catch (err) {
-      console.log(err.response.status);
       toast.show({
         description:
           err.response.status == 403
@@ -66,13 +68,6 @@ function LoginScreen({ navigation }) {
       setLoading(false);
     }
   };
-
-  // If user is login, redirect to homepage
-  useEffect(() => {
-    if (userInfo) {
-      navigation.push("Home");
-    }
-  }, [navigation, userInfo]);
 
   return (
     <ScrollView w="full" h="full" safeAreaTop>
@@ -178,7 +173,7 @@ function LoginScreen({ navigation }) {
               ml={2}
               p={0}
               variant="link"
-              onPress={() => navigation.push("Register")}
+              onPress={() => navigation.navigate("Register")}
               _pressed={{
                 color: "primary.300",
               }}

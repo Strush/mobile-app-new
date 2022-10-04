@@ -4,9 +4,11 @@ import React, { createContext, useReducer } from "react";
 export const Store = createContext();
 
 const initialState = {
-  userInfo: AsyncStorage.getItem("@user_info")
-    ? JSON.parse(AsyncStorage.getItem("@user_info"))
-    : null,
+  userInfo: AsyncStorage.getItem("@user_info").then((value) => {
+    if (value) {
+      JSON.parse(value);
+    }
+  }),
 };
 
 const reducer = (state, action) => {
