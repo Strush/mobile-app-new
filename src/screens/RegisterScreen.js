@@ -224,7 +224,6 @@ function RegisterScreen({ navigation }) {
             defaultValue=""
           />
           <FormControl.ErrorMessage>
-            {console.log(pwd)}
             {errors.confirm_password?.message}
           </FormControl.ErrorMessage>
         </FormControl>

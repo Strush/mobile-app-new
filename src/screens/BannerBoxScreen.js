@@ -7,7 +7,7 @@ export default function BannerBoxScreen({ style, imgOverlay, imgUrl }) {
   return (
     <ImageBackground source={imgUrl} resizeMode="cover" style={[style]}>
       <View style={[imgOverlay]} />
-      <Box p={5}>
+      <Box px={5} pb={4}>
         <Flex flexDirection="row">
           <Entypo name="documents" size={40} color="#fff" />
           <Heading ml={4} color="#fff" fontWeight="900" size="2xl">

@@ -39,6 +39,7 @@ function LoginScreen({ navigation }) {
   const toast = useToast();
 
   const onSubmit = async (fromData) => {
+    console.log(fromData.email, "fromData");
     setLoading(true);
     try {
       const { data } = await axios.post(
@@ -48,6 +49,7 @@ function LoginScreen({ navigation }) {
           password: fromData.password,
         }
       );
+
       ctxDispatch({ type: "USER_SINGIN", payload: data });
       setLoading(false);
 

@@ -5,11 +5,15 @@ import { Ionicons } from "@expo/vector-icons";
 export default function SearchBarScreen() {
   return (
     <View
-      p={4}
-      fixed
+      safeAreaTop
+      px={4}
+      w="full"
+      py={4}
       style={{
         zIndex: 999,
       }}
+      backgroundColor="#fff"
+      shadow={2}
     >
       <VStack w="100%" alignSelf="center">
         <Input
