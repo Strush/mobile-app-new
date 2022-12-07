@@ -15,7 +15,6 @@ import { AntDesign, Entypo, SimpleLineIcons } from "@expo/vector-icons";
 import { useForm, Controller } from "react-hook-form";
 import axios from "axios";
 import getError from "../utils";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Store } from "../Store";
 
 function LoginScreen({ navigation }) {
@@ -29,8 +28,6 @@ function LoginScreen({ navigation }) {
   // Loading button on form submit
   const [loading, setLoading] = useState(false);
 
-  console.log(navigation.navigate);
-
   // Manage state with context API
   const { state, dispatch: ctxDispatch } = useContext(Store);
   const { userInfo } = state;
@@ -39,8 +36,8 @@ function LoginScreen({ navigation }) {
   const toast = useToast();
 
   const onSubmit = async (fromData) => {
-    console.log(fromData.email, "fromData");
-    setLoading(true);
+    console.log(fromData, "fromData");
+    //setLoading(true);
     try {
       const { data } = await axios.post(
         `${process.env.API_URI_SITE}/wp-json/jwt-auth/v1/token`,
@@ -51,10 +48,9 @@ function LoginScreen({ navigation }) {
       );
 
       ctxDispatch({ type: "USER_SINGIN", payload: data });
-      setLoading(false);
+      console.log(data, "data -->");
+      //setLoading(false);
 
-      // Send token on async storage
-      await AsyncStorage.setItem("@user_info", JSON.stringify(data));
       navigation.push("Home");
     } catch (err) {
       toast.show({

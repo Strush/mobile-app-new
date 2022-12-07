@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useReducer, useState } from "react";
 import {
   Box,
   Button,
@@ -11,21 +11,81 @@ import {
   Toast,
   Radio,
   Divider,
+  Skeleton,
   VStack,
+  StatusBar,
 } from "native-base";
 import { Store } from "../Store";
-import { TouchableOpacity, Pressable } from "react-native";
+import { TouchableOpacity } from "react-native";
 import { Rating } from "react-native-ratings";
 import { MaterialCommunityIcons, FontAwesome } from "@expo/vector-icons";
 import { WooCommerceDataAPI } from "../woocoomerce";
-import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case "DELIVERY_METHODS_REQUEST": {
+      return { ...state, loading: true };
+    }
+    case "DELIVERY_METHODS_SUCCESS": {
+      return { ...state, loading: false, methods: action.payload };
+    }
+    case "DELIVERY_METHODS_FAIL": {
+      return { ...state, loading: false, error: action.payload };
+    }
+    default: {
+      return state;
+    }
+  }
+};
 
 export default function CartScreen({ navigation }) {
   const { state, dispatch: ctxContext } = useContext(Store);
+  const [{ loading, error, methods }, dispatch] = useReducer(reducer, {
+    loading: true,
+    methods: [],
+    error: "",
+  });
+
   const {
     cart: { cartItems },
   } = state;
-  const [deliveryMethod, setDeliveryMethod] = useState(15);
+
+  const [deliveryMethod, setDeliveryMethod] = useState(
+    state.cart.deliveryMethod || {
+      method_id: "local_pickup",
+      method_title: "Colectare locală",
+      total: "0 lei",
+    }
+  );
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        dispatch({ type: "DELIVERY_METHODS_REQUEST", loading: true });
+        const data = await WooCommerceDataAPI.get("shipping/zones/1/methods");
+        dispatch({
+          type: "DELIVERY_METHODS_SUCCESS",
+          loading: false,
+          payload: data,
+        });
+      } catch (err) {
+        dispatch({
+          type: "DELIVERY_METHODS_FAIL",
+          loading: false,
+          payload: err,
+        });
+        Toast.show({
+          description: "Ceva nu a mers bine!?",
+          type: "error",
+          style: {
+            backgroundColor: "red",
+          },
+        });
+      }
+    };
+    fetchData();
+  }, []);
 
   const updateCartHandler = async (product, quantity) => {
     const data = await WooCommerceDataAPI.get(`products/${product.id}`);
@@ -43,47 +103,62 @@ export default function CartScreen({ navigation }) {
       type: "ADD_PRODUCT_TO_CART",
       payload: { ...product, quantity },
     });
+
+    await AsyncStorage.setItem(
+      "cartItems",
+      JSON.stringify({ ...product, quantity })
+    );
   };
 
-  const removeProductHandler = (product) => {
+  const removeProductHandler = async (product) => {
     ctxContext({ type: "REMOVE_PRODUCT_FROM_CART", payload: product });
-    Toast.show({
-      description: "Produsul a fost șters din coș",
-      type: "success",
-      style: {
-        backgroundColor: "#42855B",
-      },
-    });
   };
 
-  const saveDeliveryMethod = async (val) => {
-    console.log(val, "val -->");
-    const delivery = await WooCommerceDataAPI.get(`shipping_methods/${val}`)
-      .then(({ id, title }) => {
-        console.log(id, title);
-      })
-      .catch((error) => {
-        console.log(error.response.data);
-      });
+  const saveDeliveryMethod = async (obj) => {
+    ctxContext({
+      type: "SAVE_DELIVERY_METHOD",
+      payload: obj,
+    });
 
-    //ctxContext({ type: "SAVE_DELIVERY_PRICE", payload: val });
     navigation.navigate("PlaceOrder");
+  };
+
+  const getDeliveryMethodHandler = (methodId) => {
+    const method = methods.find((x) => x.method_id === methodId);
+    const {
+      title,
+      settings: {
+        cost: { value },
+      },
+    } = method;
+    let total = value ? value + " lei" : "0 lei";
+    setDeliveryMethod({
+      method_id: methodId,
+      method_title: title,
+      total: total,
+    });
   };
 
   return (
     <>
-      <ScrollView>
-        <Box safeAreaTop position="relative">
-          <HStack flexDirection="column" px="2" mt="2">
+      <StatusBar backgroundColor="#fff" barStyle="dark-content" />
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: cartItems.length > 0 ? 0 : 1,
+          justifyContent: "center",
+        }}
+      >
+        <Box mt={1}>
+          <HStack flexDirection="column" px="2">
             {cartItems.length > 0 ? (
               cartItems.map((product, index) => (
-                <TouchableOpacity
+                <Box
                   style={{
                     overflow: "hidden",
                     display: "flex",
                     flexDirection: "row",
                     width: "100%",
-                    marginBottom: 10,
+                    marginTop: 10,
                     backgroundColor: "#fff",
                     padding: 3,
                     shadow: 1,
@@ -91,32 +166,44 @@ export default function CartScreen({ navigation }) {
                     borderRadius: 7,
                   }}
                   key={index}
-                  onPress={() =>
-                    navigation.navigate("SingleProduct", {
-                      productId: product.id,
-                    })
-                  }
                 >
-                  <Image
-                    width="130px"
-                    height="130px"
-                    mr={3}
-                    resizeMode="cover"
-                    source={{
-                      uri: product.images ? product.images[0].src : "test",
-                    }}
-                    alt=""
-                  />
+                  <TouchableOpacity
+                    onPress={() =>
+                      navigation.navigate("SingleProduct", {
+                        productId: product.id,
+                      })
+                    }
+                  >
+                    <Image
+                      width="130px"
+                      height="130px"
+                      mr={3}
+                      resizeMode="cover"
+                      source={{
+                        uri: product.images ? product.images[0].src : "test",
+                      }}
+                      alt=""
+                    />
+                  </TouchableOpacity>
+
                   <Box flex={1} margin={0} pr={1}>
-                    <Text
-                      fontSize={13}
-                      lineHeight={16}
-                      mb={2}
-                      noOfLines={2}
-                      bold
+                    <TouchableOpacity
+                      onPress={() =>
+                        navigation.navigate("SingleProduct", {
+                          productId: product.id,
+                        })
+                      }
                     >
-                      {product.name}
-                    </Text>
+                      <Text
+                        fontSize={13}
+                        lineHeight={16}
+                        mb={2}
+                        noOfLines={2}
+                        bold
+                      >
+                        {product.name}
+                      </Text>
+                    </TouchableOpacity>
 
                     <Text mb={1}>
                       <Rating
@@ -202,14 +289,10 @@ export default function CartScreen({ navigation }) {
                       </Box>
                     </HStack>
                   </Box>
-                </TouchableOpacity>
+                </Box>
               ))
             ) : (
-              <Center
-                style={{
-                  paddingTop: 50,
-                }}
-              >
+              <Center>
                 <MaterialCommunityIcons
                   name="cart-minus"
                   size={100}
@@ -226,7 +309,7 @@ export default function CartScreen({ navigation }) {
                     borderRadius: 25,
                     backgroundColor: "transparent",
                   }}
-                  onPress={() => navigation.navigate("Home")}
+                  onPress={() => navigation.navigate("CartToHome")}
                 >
                   <Text color="#3C5898" fontWeight={600}>
                     Continuă cumparăturile
@@ -239,47 +322,126 @@ export default function CartScreen({ navigation }) {
       </ScrollView>
       {cartItems.length > 0 && (
         <Box py={4} px={3} background="#fff">
-          <Text fontSize={16} mb={2} fontWeight={600}>
-            Livrare:
-          </Text>
-          <Radio.Group
-            defaultValue="flat_rate"
-            name="myRadioGroup"
-            accessibilityLabel="favorite number"
-            onChange={(val) => setDeliveryMethod(val)}
-          >
-            <VStack>
-              <Radio value="flat_rate">
-                Sameday:
-                <Text fontSize={16} bold>
-                  14,99 lei
-                </Text>
-              </Radio>
-              <Radio value="local_pickup" my={2}>
-                Colectare locală:
-                <Text fontSize={16} bold>
-                  0 lei
-                </Text>
-              </Radio>
+          {loading ? (
+            <VStack space={3}>
+              <HStack space={3}>
+                <Skeleton
+                  style={{
+                    width: "30%",
+                  }}
+                  h={5}
+                  rounded="full"
+                />
+                <Skeleton
+                  h={5}
+                  style={{
+                    width: "65%",
+                  }}
+                  rounded="full"
+                />
+              </HStack>
+              <HStack space={3}>
+                <Skeleton
+                  style={{
+                    width: "5%",
+                  }}
+                  h={5}
+                  rounded="full"
+                />
+                <Skeleton
+                  h={5}
+                  style={{
+                    width: "90%",
+                  }}
+                  rounded="full"
+                />
+              </HStack>
+              <HStack space={3}>
+                <Skeleton
+                  style={{
+                    width: "5%",
+                  }}
+                  h={5}
+                  rounded="full"
+                />
+                <Skeleton
+                  h={5}
+                  style={{
+                    width: "90%",
+                  }}
+                  rounded="full"
+                />
+              </HStack>
             </VStack>
-          </Radio.Group>
-          <Divider my={2} />
+          ) : (
+            <>
+              <Text fontSize={16} mb={2} fontWeight={600}>
+                Livrare:
+              </Text>
+
+              <Radio.Group
+                defaultValue={deliveryMethod.method_id}
+                name="myRadioGroup"
+                accessibilityLabel="favorite number"
+                onChange={(val) => getDeliveryMethodHandler(val)}
+              >
+                <VStack space={2}>
+                  {methods.length > 0
+                    ? methods.map((met) =>
+                        met.settings.cost ? (
+                          <Radio
+                            value={met.method_id}
+                            key={met.id}
+                            w="full"
+                            overflow="hidden"
+                          >
+                            <Text>{met.title}:</Text>
+                            <Text fontSize={16} bold>
+                              {met.settings.cost.value
+                                ? met.settings.cost.value
+                                : "0 "}
+                              lei
+                            </Text>
+                          </Radio>
+                        ) : (
+                          ""
+                        )
+                      )
+                    : ""}
+                </VStack>
+              </Radio.Group>
+            </>
+          )}
+
+          <Divider my={3} />
           <Flex flexDirection="row" mb={2} justifyContent="space-between">
-            <Text fontSize={16} fontWeight={600}>
-              Total comandă:
-            </Text>
-            <Text fontSize={16} fontWeight={600}>
-              {cartItems
-                .reduce((a, c) => a + c.price * c.quantity, 0)
-                .toFixed(2)}
-              Lei
-            </Text>
+            <Skeleton isLoaded={!loading} rounded="2xl" h={5}>
+              <Text fontSize={16} fontWeight={600}>
+                Total comandă:
+              </Text>
+              <Text fontSize={16} fontWeight={600}>
+                {cartItems
+                  .reduce(
+                    (a, c) =>
+                      a +
+                      c.price * c.quantity +
+                      parseFloat(deliveryMethod.total),
+                    0
+                  )
+                  .toFixed(2)}{" "}
+                lei
+              </Text>
+            </Skeleton>
           </Flex>
           <Button
             variant="solid"
             colorScheme="primary"
             size="sm"
             onPress={() => saveDeliveryMethod(deliveryMethod)}
+            isLoading={loading}
+            fontSize={20}
+            fontWeight={400}
+            h={12}
           >
             <Text fontSize={20} fontWeight={400} color="#fff">
               Continuă

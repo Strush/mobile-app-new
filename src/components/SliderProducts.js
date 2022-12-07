@@ -10,9 +10,7 @@ import {
 } from "native-base";
 import { TouchableOpacity } from "react-native";
 import { Rating } from "react-native-ratings";
-import { MaterialIcons } from "@expo/vector-icons";
 import SkeletonProduct from "./SkeletonProduct";
-import { AntDesign } from "@expo/vector-icons";
 import AddToCartButton from "./AddToCartButton";
 
 const SliderProducts = ({ loading, error, title, products, navigation }) => {

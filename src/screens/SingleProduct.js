@@ -59,7 +59,7 @@ export default function SingleProduct({ route }) {
       ) : (
         <>
           <ScrollView>
-            <Box safeAreaTop position="relative">
+            <Box position="relative">
               <Box shadow="1" borderBottomWidth={1} borderBottomColor="#ccc">
                 {product.images?.length > 0 ? (
                   <FlatListSlider

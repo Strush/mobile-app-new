@@ -1,11 +1,12 @@
-import React, { useEffect, useReducer } from "react";
+import React, { useContext, useEffect, useReducer } from "react";
 import { Box, ScrollView, Toast } from "native-base";
 import SearchBarScreen from "./SearchBarScreen";
 import BannerBoxScreen from "./BannerBoxScreen";
-import { StyleSheet } from "react-native";
+import { SafeAreaView, StyleSheet } from "react-native";
 import SliderProducts from "../components/SliderProducts";
 import getError from "../utils";
 import { WooCommerceDataAPI } from "../woocoomerce";
+import { Store } from "../Store";
 
 const reducer = (state, action) => {
   switch (action.type) {
@@ -24,7 +25,11 @@ const reducer = (state, action) => {
 };
 
 function HomePageScreen({ navigation }) {
+  console.log("procces-->", process.env.API_URI_SITE);
+
   let img = require("../../assets/login3.png");
+
+  const { state, dispatch: ctxContext } = useContext(Store);
 
   const [{ loading, error, products }, dispatch] = useReducer(reducer, {
     loading: true,
@@ -57,7 +62,11 @@ function HomePageScreen({ navigation }) {
   }, []);
 
   return (
-    <Box safeAreaTop position="relative">
+    <Box>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: "#000", opacity: 0.7 }}
+      />
+
       <SearchBarScreen />
 
       <ScrollView>

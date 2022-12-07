@@ -21,6 +21,7 @@ export default function SearchBarScreen() {
           variant="outline"
           width="100%"
           size="xl"
+          py={2}
           fontWeight="500"
           borderRadius="50"
           color="black"

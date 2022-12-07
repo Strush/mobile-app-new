@@ -15,6 +15,7 @@ import HomePageScreen from "../screens/HomePageScreen";
 import PlaceOrderScreen from "../screens/PlaceOrderScreen";
 import PaymentScreen from "../screens/PaymentScreen";
 import CreateOrderScreen from "../screens/CreateOrderScreen";
+import exOrder from "../screens/exOrder";
 
 const Tab = createBottomTabNavigator();
 const ProfileStack = createNativeStackNavigator();
@@ -56,21 +57,35 @@ function CartStackScreen() {
     <CartStack.Navigator>
       <CartStack.Screen
         name="Cart"
-        options={{ headerShown: false }}
+        options={{
+          title: "Coș",
+          headerTitleAlign: "center",
+          headerStyle: {
+            backgroundColor: "#fff",
+          },
+          headerTintColor: "#000",
+          headerTitleStyle: {
+            color: "#000",
+          },
+        }}
         component={CartScreen}
       />
       <CartStack.Screen
         name="PlaceOrder"
         options={{
-          title: "Înapoi",
+          title: "Adresa de livrare",
+          tabBarVisible: false,
+          headerTitleAlign: "center",
           headerBackTitle: "Înapoi",
         }}
         component={PlaceOrderScreen}
       />
+
       <CartStack.Screen
         name="Payment"
         options={{
-          title: "Înapoi",
+          title: "Metoda de plată",
+          headerTitleAlign: "center",
           headerBackTitle: "Înapoi",
         }}
         component={PaymentScreen}
@@ -78,8 +93,8 @@ function CartStackScreen() {
       <CartStack.Screen
         name="order"
         options={{
-          title: "Înapoi",
-          headerBackTitle: "Înapoi",
+          title: "Comanda dumneavoastră",
+          headerBackTitle: "",
         }}
         component={CreateOrderScreen}
       />
@@ -100,7 +115,7 @@ function ProductStackTab() {
       <ProductStack.Screen
         name="Products"
         options={{
-          title: "Înapoi",
+          title: "",
           headerBackTitle: "Înapoi",
           style: {
             padding: 0,
@@ -111,7 +126,8 @@ function ProductStackTab() {
       <ProductStack.Screen
         name="SingleProduct"
         options={{
-          title: "Înapoi",
+          title: "",
+          headerBackTitle: "Înapoi",
           headerStyle: { paddingVertical: 0, margin: 0, height: 20 },
           headerStatusBarHeight: 20,
         }}
@@ -121,15 +137,18 @@ function ProductStackTab() {
   );
 }
 
-export default function TabsMenu() {
+export default function TabsMenu({ routeName }) {
   const { state } = useContext(Store);
   const {
     cart: { cartItems },
   } = state;
 
+  const hideTabBar = routeName === "PlaceOrder";
+
   return (
     <Tab.Navigator
       screenOptions={{
+        tabBarHideOnKeyboard: true,
         tabBarLabelStyle: {
           fontSize: 14,
           marginTop: -7,
@@ -138,11 +157,12 @@ export default function TabsMenu() {
         tabBarStyle: {
           backgroundColor: "#fff",
           height: 100,
+          //display: hideTabBar ? "none" : "flex",
         },
       }}
     >
       <Tab.Screen
-        name="Home"
+        name="CartToHome"
         component={HomepageStackScreen}
         options={{
           tabBarLabel: "Acasă",

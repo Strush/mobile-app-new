@@ -90,8 +90,8 @@ export default function Products({ route, navigation }) {
       ) : error ? (
         <Text>Error...</Text>
       ) : (
-        <ScrollView mt={0} pt={0}>
-          <Box safeAreaTop position="relative">
+        <ScrollView>
+          <Box>
             {
               <HStack flexDirection="column" px="2" mt="2">
                 {products.map((product) => (

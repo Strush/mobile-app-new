@@ -1,40 +1,48 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { createContext, useReducer } from "react";
+import React, { createContext, useReducer, useState } from "react";
 
 export const Store = createContext();
 
 const initialState = {
   userInfo: {
-    token: AsyncStorage.getItem("@user_info").then((value) => {
-      if (value) {
-        JSON.parse(value);
-      }
-    }),
-    address: {
-      address_2: "",
-      city: "Bacau",
-      state: "Ro",
-      postcode: "60017",
-      country: "Romania",
-    },
+    token: null,
+    address: {},
   },
   cart: {
     cartItems: [],
-    deliveryMethod: {
-      method_id: "",
-      method_title: "",
-      total: 0,
-    },
-    paymentMethod: "card",
+    deliveryMethod: null,
+    paymentMethod: null,
   },
 };
 
-// AsyncStorage.getItem("cartItems").then((value) =>
-//       value ? JSON.parse(value) : []
+console.log("initial state ->", initialState);
+
+// Set storage user address
+AsyncStorage.getItem("userInfoAddress").then((add) =>
+  add ? (initialState.userInfo.address = JSON.parse(add)) : {}
+);
+
+// Set storage cart items
+AsyncStorage.getItem("cartItems").then((items) =>
+  items ? (initialState.cart.cartItems = JSON.parse(items)) : []
+);
+
+// Set storage payment method
+AsyncStorage.getItem("deliveryMethod").then((delivery) =>
+  delivery ? (initialState.cart.deliveryMethod = JSON.parse(delivery)) : null
+);
+
+// Set storage payment method
+AsyncStorage.getItem("paymentMethod").then((payment) =>
+  payment ? (initialState.cart.paymentMethod = JSON.parse(payment)) : null
+);
 
 const reducer = (state, action) => {
   switch (action.type) {
     case "USER_SINGIN": {
+      // Send token on async storage
+      AsyncStorage.setItem("secret_token", JSON.stringify(data));
+
       return { ...state, userInfo: action.payload };
     }
 
@@ -50,7 +58,7 @@ const reducer = (state, action) => {
           })
         : [...state.cart.cartItems, newProduct];
 
-      //AsyncStorage.setItem("cartItems", JSON.stringify(cartItems));
+      AsyncStorage.setItem("cartItems", JSON.stringify(cartItems));
 
       return { ...state, cart: { ...state.cart, cartItems } };
     }
@@ -58,6 +66,8 @@ const reducer = (state, action) => {
     case "REMOVE_PRODUCT_FROM_CART": {
       const product = action.payload;
       const cartItems = state.cart.cartItems.filter((x) => x.id !== product.id);
+
+      AsyncStorage.setItem("cartItems", JSON.stringify(cartItems));
 
       return { ...state, cart: { ...state.cart, cartItems } };
     }
@@ -72,11 +82,14 @@ const reducer = (state, action) => {
 
     case "SAVE_DELIVERY_METHOD": {
       const deliveryMethod = action.payload;
-      return { ...state, cart: { ...cart.cart, deliveryMethod } };
+      AsyncStorage.setItem("deliveryMethod", JSON.stringify(deliveryMethod));
+      return { ...state, cart: { ...state.cart, deliveryMethod } };
     }
 
     case "SAVE_PAYMENT_METHOD": {
-      return { ...state, paymentMethod: action.payload };
+      const paymentMethod = action.payload;
+      AsyncStorage.setItem("paymentMethod", JSON.stringify(paymentMethod));
+      return { ...state, cart: { ...state.cart, paymentMethod } };
     }
 
     default:
